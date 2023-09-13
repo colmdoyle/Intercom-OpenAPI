@@ -1,0 +1,32 @@
+name: Deploy postman collection
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    branches:
+      - main
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "14"
+      - name: "Create env file"
+        run: |
+          touch .env
+          echo POSTMAN_API_KEY=${{  secrets.POSTMAN_API_KEY }} >> .env
+          echo POSTMAN_WORKSPACE_ID=${{  secrets.POSTMAN_WORKSPACE_ID }} >> .env
+      - run: npm install
+      - name: Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+      - run: node ./scripts/postman/run-postman-collection.js ${{ steps.changed-files.outputs.all_changed_and_modified_files }}
+      - name: List all changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_and_modified_files }}; do
+            echo "$file was changed"
+          done
